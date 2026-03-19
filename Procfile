@@ -1,1 +1,1 @@
-worker: playwright install chromium && python main.py
+worker: playwright install chromium && python3 main.py
