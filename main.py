@@ -11,6 +11,10 @@ bot = telebot.TeleBot(TOKEN)
 
 URL = "https://retailerportal.paynearby.in/auth/login?source=paynearby-site"
 
+# 🔐 TERA LOGIN DATA
+LOGIN_NUMBER = "9973028650"
+LOGIN_PASSWORD = "Shubham@9282"
+
 
 def check_numbers(numbers):
     results = []
@@ -19,19 +23,22 @@ def check_numbers(numbers):
         browser = p.chromium.launch(headless=True, args=["--no-sandbox"])
         page = browser.new_page()
 
-        # open page
+        # 🔥 STEP 1: LOGIN (ONLY ONCE)
         page.goto(URL)
 
-        # activate session (1 time)
-        page.fill("input[type='tel']", "9999999999")
-        page.fill("input[type='password']", "test123")
+        page.fill("input[type='tel']", LOGIN_NUMBER)
+        page.fill("input[type='password']", LOGIN_PASSWORD)
         page.click("button")
 
-        # short wait (max 15 sec)
-        for i in range(15):
+        print("LOGIN DONE")
+
+        # ⏱️ short wait
+        for _ in range(12):
             page.wait_for_timeout(1000)
 
-        # loop
+        print("START CHECK")
+
+        # 🔁 LOOP
         for num in numbers:
             try:
                 page.fill("input[type='tel']", "")
@@ -44,8 +51,8 @@ def check_numbers(numbers):
                 if "not registered" not in content:
                     results.append(num)
 
-            except:
-                pass
+            except Exception as e:
+                print("ERROR:", e)
 
         browser.close()
 
@@ -54,16 +61,15 @@ def check_numbers(numbers):
 
 @bot.message_handler(commands=['start'])
 def start(msg):
-    bot.reply_to(msg, "Send numbers or .txt")
+    bot.reply_to(msg, "Send numbers (one per line)")
 
 
-# 🔥 DIRECT NUMBER INPUT SUPPORT
+# 🔥 DIRECT NUMBER INPUT
 @bot.message_handler(func=lambda message: True)
 def handle_text(message):
     try:
         bot.reply_to(message, "⏳ Checking...")
 
-        # numbers split
         numbers = [x.strip() for x in message.text.split() if x.strip()]
 
         result = check_numbers(numbers)
@@ -72,14 +78,13 @@ def handle_text(message):
             bot.reply_to(message, "❌ No registered numbers")
             return
 
-        # send as text (NO FILE → no error)
         output = "\n".join(result)
 
         bot.send_message(message.chat.id, f"✅ Registered:\n\n{output}")
 
     except Exception as e:
-        bot.reply_to(message, f"Error: {str(e)}")
+        bot.reply_to(message, f"❌ Error: {str(e)}")
 
 
-print("BOT STARTED")
+print("🚀 BOT STARTED")
 bot.infinity_polling(timeout=60, long_polling_timeout=60)
